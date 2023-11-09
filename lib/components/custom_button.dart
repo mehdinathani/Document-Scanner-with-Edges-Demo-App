@@ -12,7 +12,7 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: 50,
       child: ElevatedButton(
         style: ButtonStyle(
@@ -27,7 +27,7 @@ class CustomButton extends StatelessWidget {
             ),
             Text(
               buttonText,
-              style: TextStyle(fontSize: 14),
+              style: const TextStyle(fontSize: 14),
             ),
           ],
         ),

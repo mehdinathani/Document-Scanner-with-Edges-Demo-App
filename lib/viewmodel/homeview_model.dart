@@ -10,6 +10,9 @@ import 'package:share_plus/share_plus.dart';
 class HomeViewModel {
   String? _imagePath;
   BuildContext context;
+  bool shareSuccess = false;
+  bool saveSuccess = false;
+  bool appShared = false;
 
   HomeViewModel(this.context);
 
@@ -82,18 +85,31 @@ class HomeViewModel {
 
   Future<void> shareImage() async {
     if (_imagePath != null) {
-      await Share.shareFiles([_imagePath!], text: 'Check out this image!');
+      final result = await Share.shareFilesWithResult([_imagePath!],
+          text: 'Check out this image!');
+      if (result.status == ShareResultStatus.success) {
+        shareSuccess = true;
+      }
+      // await Share.shareFiles([_imagePath!], text: 'Check out this image!');
     }
   }
 
   Future<void> saveImage() async {
     if (_imagePath != null) {
       final result = await ImageGallerySaver.saveFile(_imagePath!);
-      showCustomSnackBar(
-          context,
-          result['isSuccess']
-              ? 'Image saved successfully'
-              : 'Failed to save image');
+      if (result['isSuccess']) {
+        saveSuccess = true;
+      }
+    }
+  }
+
+  Future<void> shareTheApp() async {
+    final result = await Share.shareWithResult(
+        'check out the great app from mehdinathani');
+
+    if (result.status == ShareResultStatus.success) {
+      debugPrint('Thank you for sharing!');
+      appShared = true;
     }
   }
 }
