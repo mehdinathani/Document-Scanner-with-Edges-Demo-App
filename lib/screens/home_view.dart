@@ -100,6 +100,8 @@ class _HomeViewState extends State<HomeView> {
                 const SizedBox(
                   width: 10,
                 ),
+
+                // get images from gallery
                 CustomButton(
                   onPressed: () async {
                     if (isMultipleImages) {
@@ -150,7 +152,12 @@ class _HomeViewState extends State<HomeView> {
                         buttonText: "Share",
                         buttonicon: Icons.share,
                         onPressed: () async {
-                          await widget.viewModel.shareImage();
+                          if (isMultipleImages) {
+                            await widget.viewModel
+                                .shareImagesMulti(_imagePaths);
+                          } else {
+                            await widget.viewModel.shareImage();
+                          }
                           if (widget.viewModel.shareSuccess) {
                             SnackBarWidget.showSnackBar(
                                 context, "Image Shared Successfully.");
@@ -161,7 +168,11 @@ class _HomeViewState extends State<HomeView> {
                         buttonicon: Icons.save_alt_outlined,
                         buttonText: "Save to Gallery",
                         onPressed: () async {
-                          await widget.viewModel.saveImage();
+                          if (isMultipleImages) {
+                            await widget.viewModel.saveImageMulti(_imagePaths);
+                          } else {
+                            await widget.viewModel.saveImage();
+                          }
                           if (widget.viewModel.saveSuccess) {
                             SnackBarWidget.showSnackBar(
                                 context, 'Image saved successfully');
@@ -176,18 +187,32 @@ class _HomeViewState extends State<HomeView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      CustomButton(
-                          onPressed: () async {
-                            await widget.viewModel.convertImageToPDF();
-                          },
-                          buttonicon: Icons.picture_as_pdf,
-                          buttonText: "Save as PDF"),
+                      // CustomButton(
+                      //     onPressed: () async {
+                      //       await widget.viewModel.convertImageToPDF();
+                      //     },
+                      //     buttonicon: Icons.picture_as_pdf,
+                      //     buttonText: "Save as PDF"),
                       CustomButton(
                         onPressed: () async {
-                          await widget.viewModel.sharePDF();
+                          if (isMultipleImages) {
+                            await widget.viewModel.shareSinglePDF(_imagePaths);
+                          } else {
+                            await widget.viewModel.sharePDF();
+                          }
                         },
                         buttonicon: Icons.share,
                         buttonText: "Share as PDF",
+                      ),
+                      CustomButton(
+                        buttonicon: Icons.restore_from_trash,
+                        buttonText: "Reset",
+                        onPressed: () {
+                          setState(() {
+                            _imagePath = null;
+                            _imagePaths.clear();
+                          });
+                        },
                       )
                     ],
                   ),
@@ -198,7 +223,7 @@ class _HomeViewState extends State<HomeView> {
               ),
             ),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Switch(
                   activeColor: Colors.blue,

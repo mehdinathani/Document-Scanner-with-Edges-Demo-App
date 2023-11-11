@@ -162,65 +162,8 @@ class HomeViewModel {
       if (result.status == ShareResultStatus.success) {
         shareSuccess = true;
       }
-      // await Share.shareFiles([_imagePath!], text: 'Check out this image!');
     }
   }
-
-  // Future<List<String>?> getImagesFromCameraMulti() async {
-  //   bool isCameraGranted = await Permission.camera.request().isGranted;
-  //   if (!isCameraGranted) {
-  //     isCameraGranted =
-  //         await Permission.camera.request() == PermissionStatus.granted;
-  //   }
-
-  //   if (!isCameraGranted) {
-  //     // Have not permission to camera
-  //     debugPrint("No Camera Permission");
-  //     return null;
-  //   }
-
-  //   try {
-  //     List<Asset> resultList = await MultiImagePicker.pickImages(
-  //       maxImages: 300,
-  //       enableCamera: true,
-  //     );
-
-  //     // Convert Asset objects to file paths
-  //     List<String> imagePaths =
-  //         resultList.map((asset) => asset.identifier ?? '').toList();
-
-  //     if (imagePaths.isNotEmpty) {
-  //       return imagePaths;
-  //     } else {
-  //       return null;
-  //     }
-  //   } catch (e) {
-  //     debugPrint(e.toString());
-  //     return null;
-  //   }
-  // }
-
-  // Future<List<String>?> getImagesFromGalleryMulti() async {
-  //   try {
-  //     List<Asset> resultList = await MultiImagePicker.pickImages(
-  //       maxImages: 300,
-  //       enableCamera: false, // Disable camera for gallery
-  //     );
-
-  //     // Convert Asset objects to file paths
-  //     List<String> imagePaths =
-  //         resultList.map((asset) => asset.identifier ?? '').toList();
-
-  //     if (imagePaths.isNotEmpty) {
-  //       return imagePaths;
-  //     } else {
-  //       return null;
-  //     }
-  //   } catch (e) {
-  //     debugPrint(e.toString());
-  //     return null;
-  //   }
-  // }
 
   Future<List<String>?> getImagesFromCameraMulti() async {
     List<String> imagePaths = [];
@@ -243,14 +186,101 @@ class HomeViewModel {
     }
   }
 
-  Future<List<String>?> getImagesFromGalleryMulti() async {
-    List<File> multipleImageFiles =
-        await CameraGalleryImagePicker.pickMultiImage();
+  // Future<List<String>?> getImagesFromGalleryMulti() async {
+  //   List<File> multipleImageFiles =
+  //       await CameraGalleryImagePicker.pickMultiImage();
 
-    if (multipleImageFiles.isNotEmpty) {
-      return multipleImageFiles.map((file) => file.path).toList();
+  //   if (multipleImageFiles.isNotEmpty) {
+  //     return multipleImageFiles.map((file) => file.path).toList();
+  //   } else {
+  //     return null;
+  //   }
+  // }
+
+  Future<List<String>?> getImagesFromGalleryMulti() async {
+    List<String> imagePaths = [];
+
+    // Loop to capture images using the edge detection
+    while (true) {
+      String? imagePath =
+          await getImageFromGallery(); // Function to capture single image using edge detection
+      if (imagePath != null) {
+        imagePaths.add(imagePath);
+      } else {
+        break; // Break the loop if there's an issue or the user stops capturing images
+      }
+    }
+
+    if (imagePaths.isNotEmpty) {
+      return imagePaths;
     } else {
-      return null;
+      return null; // Handle if there are no captured images
+    }
+  }
+
+  Future<void> shareImagesMulti(List<String> imagePaths) async {
+    for (var imagePath in imagePaths) {
+      if (imagePath != null) {
+        final result = await Share.shareFiles(imagePaths,
+            text: "Shared using Doument Scanner by mehdinathani");
+        // text: 'Check out this image!');
+        // if (result.status == ShareResultStatus.success) {
+        //   // You might need to handle individual image share success here
+        // }
+      }
+    }
+  }
+
+  Future<void> saveImageMulti(List<String> imagePaths) async {
+    for (var imagePath in imagePaths) {
+      final result = await ImageGallerySaver.saveFile(imagePath);
+      if (result['isSuccess']) {
+        saveSuccess = true; // Consider handling success for each image here
+      }
+    }
+  }
+
+  Future<String?> convertImagesToSinglePDF(List<String> imagePaths) async {
+    if (imagePaths.isEmpty) {
+      return null; // Handle an empty list
+    }
+
+    final pdf = pw.Document();
+
+    for (var imagePath in imagePaths) {
+      final imageBytes = File(imagePath).readAsBytesSync();
+      final image = pw.MemoryImage(imageBytes);
+
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Center(
+              child: pw.Image(image),
+            );
+          },
+        ),
+      );
+    }
+
+    final pdfPath = imagePaths.first.replaceAll(
+        '.jpeg', '.pdf'); // Define a single file path for the combined PDF
+
+    final pdfBytes = await pdf.save();
+    final pdfFile = File(pdfPath);
+    await pdfFile.writeAsBytes(pdfBytes);
+
+    debugPrint('Combined PDF generated successfully at ${pdfFile.path}');
+    return pdfFile.path;
+  }
+
+  Future<void> shareSinglePDF(List<String> imagePaths) async {
+    _pdfPath = await convertImagesToSinglePDF(imagePaths);
+    if (_pdfPath != null) {
+      final result = await Share.shareFilesWithResult([_pdfPath!],
+          text: 'Check out this PDF!');
+      if (result.status == ShareResultStatus.success) {
+        shareSuccess = true;
+      }
     }
   }
 }
